@@ -38,6 +38,10 @@ class TestTimedeltas(tm.TestCase):
         self.assertEqual(Timedelta(10.0,unit='d').value, expected)
         self.assertEqual(Timedelta('10 days').value, expected)
         self.assertEqual(Timedelta(days=10).value, expected)
+        self.assertEqual(Timedelta(days=10.0).value, expected)
+        
+        for npdtype in [np.int64, np.int32, np.int16, np.float64, np.float32, np.float16]:
+            self.assertEqual(Timedelta(days=npdtype(10)).value, expected)
 
         expected += np.timedelta64(10,'s').astype('m8[ns]').view('i8')
         self.assertEqual(Timedelta('10 days 00:00:10').value, expected)

@@ -1619,6 +1619,7 @@ class Timedelta(_Timedelta):
         Denote the unit of the input, if input is an integer. Default 'ns'.
     days, seconds, microseconds, milliseconds, minutes, hours, weeks : numeric, optional
         Values for construction in compat with datetime.timedelta.
+        np ints and floats will be coereced to python ints and floats.
 
     Notes
     -----
@@ -1632,11 +1633,23 @@ class Timedelta(_Timedelta):
         if value is None:
             if not len(kwargs):
                 raise ValueError("cannot construct a TimeDelta without a value/unit or descriptive keywords (days,seconds....)")
+            # sanitize timedelta input.
+            # needed to avoid np to python-native int/float typecasting issues
+            for argname, argvalue in kwargs.items():
+                if isinstance(argvalue, (int, float)):
+                    continue
+                elif np.issubdtype(argvalue, int):
+                    kwargs[argname] = int(argvalue)
+                elif np.issubdtype(argvalue, float):
+                    kwargs[argname] = float(argvalue)
             try:
                 value = timedelta(**kwargs)
-            except (TypeError):
-                raise ValueError("cannot construct a TimeDelta from the passed arguments, allowed keywords are "
-                                 "[days, seconds, microseconds, milliseconds, minutes, hours, weeks]")
+            except TypeError as e:
+                if 'unsupported type' in str(e):
+                    raise e
+                else:
+                    raise ValueError("cannot construct a TimeDelta from the passed arguments, allowed keywords are "
+                                     "[days, seconds, microseconds, milliseconds, minutes, hours, weeks]")
 
         if isinstance(value, Timedelta):
             value = value.value
